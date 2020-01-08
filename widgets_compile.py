@@ -56,8 +56,8 @@ def add_compile_widgets(exercise_name):
     display(boxes, compile_run_btn)
     compile_run_btn.on_click(functools.partial(run_code_clicked, rs_=exercise_name, text=text, outputtext=outputtext)) # bind event handler
 
-# Functions for short answer quesetion widgets
-def check_clicked(b, answer_strs=[''], wd_str='', cd_str='', user_answer_text=widgets.Text(), after_description=widgets.Label()):
+# Functions for short answer question widgets
+def s_check_clicked(b, answer_strs=[''], wd_str='', cd_str='', user_answer_text=widgets.Text(), after_description=widgets.Label()):
     answer_is_correct = False
     for i in answer_strs:
         if user_answer_text.value == i:
@@ -67,10 +67,12 @@ def check_clicked(b, answer_strs=[''], wd_str='', cd_str='', user_answer_text=wi
     if answer_is_correct == True:
         b.description='Correct'
         b.button_style='success'
+        after_description.layout = widgets.Layout(border='solid 1px')
         after_description.value = cd_str
     else:
-        b.description='Wrong'
+        b.description='Incorrect'
         b.button_style='danger'
+        after_description.layout = widgets.Layout(border='solid 1px')
         after_description.value = wd_str
 
 
@@ -84,14 +86,41 @@ def add_short_question(question_str, answer_strs, wrong_description='', correct_
         button_style='warning',
         tooltip='',
         icon='check',
-        layout=widgets.Layout(width='80px')
+        layout=widgets.Layout(width='90px')
     )
     after_description = widgets.Label('')
     qa_box = widgets.VBox([widgets.Label(question_str), user_answer_text, check_answer_btn, after_description])
     display(qa_box)
-    check_answer_btn.on_click(functools.partial(check_clicked, answer_strs=answer_strs, wd_str=wrong_description, cd_str=correct_description, user_answer_text=user_answer_text, after_description=after_description))
+    check_answer_btn.on_click(functools.partial(s_check_clicked, answer_strs=answer_strs, wd_str=wrong_description, cd_str=correct_description, user_answer_text=user_answer_text, after_description=after_description))
 
     
+#Functions for choice question widgets
+def c_check_clicked(b, answer_idx=0, cd_str='', wd_str='', radio=widgets.RadioButtons(), after_description=widgets.Label()):
+    if radio.index == answer_idx:
+        b.description='Correct'
+        b.button_style='success'
+        after_description.layout = widgets.Layout(border='solid 1px')
+        after_description.value = cd_str
+    else:
+        b.description='Incorrect'
+        b.button_style='danger'
+        after_description.layout = widgets.Layout(border='solid 1px')
+        after_description.value = wd_str
 
-def add_choice_question(question_str, choices, answer_idx):
-    print('not yet implemented')
+def add_choice_question(question_str, choices, answer_idx, wrong_description='', correct_description=''):
+    radio = widgets.RadioButtons(
+        options = choices,
+        disabled = False
+    )
+    check_answer_btn = widgets.Button(
+        description='Check',
+        disabled=False,
+        button_style='warning',
+        tooltip='',
+        icon='check',
+        layout=widgets.Layout(width='90px')
+    )
+    after_description = widgets.Label('')
+    choice_box = widgets.VBox([widgets.Label(question_str), radio, check_answer_btn, after_description])
+    display(choice_box)
+    check_answer_btn.on_click(functools.partial(c_check_clicked, answer_idx=answer_idx, cd_str=correct_description, wd_str=wrong_description, radio=radio, after_description=after_description))
