@@ -6,13 +6,8 @@ from IPython.display import display
 from IPython.display import clear_output
 cd = get_ipython().run_line_magic('pwd', '')
 
-# Functions for compile widgets
-def print_result(exercise_name, cmd_result): # used for parsing the actual result (not used anymore)
-    cmd_result = cmd_result.replace(exercise_name, 'X', 2).replace(cd, 'X', 3)
-    cmd_result = cmd_result[cmd_result.find(exercise_name)+6:cmd_result.find(cd)-2]
-    print(cmd_result)
-
-def run_code_clicked(b, rs_="", text=widgets.Textarea(), outputtext=widgets.Textarea()): # button event handler
+# Functions for compile widgets (output only)
+def run_code_clicked_o(b, rs_="", text=widgets.Textarea(), outputtext=widgets.Textarea()): # button event handler
     usr_src_fname = rs_ + '.c'
     with open(usr_src_fname, 'w') as f:
         f.write(text.value)
@@ -28,7 +23,7 @@ def run_code_clicked(b, rs_="", text=widgets.Textarea(), outputtext=widgets.Text
     else:
         outputtext.value = compile_error
 
-def add_compile_widgets(exercise_name):
+def add_compile_widgets_o(exercise_name):
     src_fname = exercise_name + '_src.c'
     with open(src_fname, 'r') as f:
         prewritten_src = f.read()
@@ -54,7 +49,67 @@ def add_compile_widgets(exercise_name):
         icon='check'
     )
     display(boxes, compile_run_btn)
-    compile_run_btn.on_click(functools.partial(run_code_clicked, rs_=exercise_name, text=text, outputtext=outputtext)) # bind event handler
+    compile_run_btn.on_click(functools.partial(run_code_clicked_o, rs_=exercise_name, text=text, outputtext=outputtext)) # bind event handler
+
+# Functions for compile widgets (with input and output) (working)
+def run_code_clicked_io(b, rs_="", text=widgets.Textarea(), outputtext=widgets.Textarea(), inputtext=widgets.Textarea()): # button event handler
+    usr_src_fname = rs_ + '.c'
+    with open(usr_src_fname, 'w') as f:
+        f.write(text.value)
+    usr_src_fname = rs_ + '.c'
+    cmd_command = 'gcc ' + usr_src_fname + ' -o ' + rs_
+    result = subprocess.Popen(cmd_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # compile the source program
+    compile_error = result.communicate()[1]
+    if compile_error == '':
+        cmd_command = rs_
+        result = subprocess.Popen(cmd_command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # run the program
+        output = result.communicate(input=inputtext.value)[0]
+        outputtext.value = output
+    else: # compile error occured
+        cmd_command = inputtext.value
+        outputtext.value = compile_error
+
+def add_compile_widgets_io(exercise_name):
+    src_fname = exercise_name + '_src.c'
+    with open(src_fname, 'r') as f:
+        prewritten_src = f.read()
+    text = widgets.Textarea(
+        value=prewritten_src,
+        placeholder='',
+        disabled=False,
+        layout=widgets.Layout(width='99%', height='200px'),
+    )
+
+    inputtext = widgets.Textarea(
+        value='',
+        placeholder='',
+        disabled=False,
+        layout=widgets.Layout(width='250px', height='100px'),
+    )
+    i_box = widgets.VBox([widgets.Label('Input:'), inputtext])
+
+    outputtext = widgets.Textarea(
+        value='',
+        placeholder='',
+        disabled=True,
+        layout=widgets.Layout(width='250px', height='100px'),
+    )
+    o_box = widgets.VBox([widgets.Label('Output: '), outputtext])
+    io_box = widgets.HBox(
+        [i_box, o_box],
+        #layout=widgets.Layout(max_width='100%', height='150px'),
+    )
+    boxes = widgets.VBox([widgets.Label('Write your own code:'), text, io_box])
+
+    compile_run_btn = widgets.Button(
+        description='Run Code',
+        disabled=False,
+        button_style='warning', # 'success', 'info', 'warning', 'danger' or ''
+        tooltip='',
+        icon='check'
+    )
+    display(boxes, compile_run_btn)
+    compile_run_btn.on_click(functools.partial(run_code_clicked_io, rs_=exercise_name, text=text, outputtext=outputtext, inputtext=inputtext)) # bind event handler
 
 # Functions for short answer question widgets
 def s_check_clicked(b, answer_strs=[''], wd_str='', cd_str='', user_answer_text=widgets.Text(), after_description=widgets.Label()):
