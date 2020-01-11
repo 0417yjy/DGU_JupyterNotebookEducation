@@ -5,18 +5,18 @@ from IPython import get_ipython
 from IPython.display import display
 from IPython.display import clear_output
 cd = get_ipython().run_line_magic('pwd', '')
+exercise_directory = '.\\exercises\\'
 
-# Functions for compile widgets (output only)
+# Functions for compile widgets (output only) (adding exercise direcotires)
 def run_code_clicked_o(b, rs_="", text=widgets.Textarea(), outputtext=widgets.Textarea()): # button event handler
-    usr_src_fname = rs_ + '.c'
+    usr_src_fname = exercise_directory + rs_ + '.c'
     with open(usr_src_fname, 'w') as f:
         f.write(text.value)
-    usr_src_fname = rs_ + '.c'
-    cmd_command = 'gcc ' + usr_src_fname + ' -o ' + rs_
+    cmd_command = 'gcc ' + usr_src_fname + ' -o ' + exercise_directory + rs_
     result = subprocess.Popen(cmd_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # compile the source program
     compile_error = result.communicate()[1]
     if compile_error == '':
-        cmd_command = rs_
+        cmd_command = exercise_directory + rs_
         result = subprocess.Popen(cmd_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # run the program
         output = result.communicate()[0]
         outputtext.value = output
@@ -24,7 +24,7 @@ def run_code_clicked_o(b, rs_="", text=widgets.Textarea(), outputtext=widgets.Te
         outputtext.value = compile_error
 
 def add_compile_widgets_o(exercise_name):
-    src_fname = exercise_name + '_src.c'
+    src_fname = exercise_directory + exercise_name + '_src.c'
     with open(src_fname, 'r') as f:
         prewritten_src = f.read()
     text = widgets.Textarea(
@@ -53,15 +53,14 @@ def add_compile_widgets_o(exercise_name):
 
 # Functions for compile widgets (with input and output) (working)
 def run_code_clicked_io(b, rs_="", text=widgets.Textarea(), outputtext=widgets.Textarea(), inputtext=widgets.Textarea()): # button event handler
-    usr_src_fname = rs_ + '.c'
+    usr_src_fname = exercise_directory + rs_ + '.c'
     with open(usr_src_fname, 'w') as f:
         f.write(text.value)
-    usr_src_fname = rs_ + '.c'
-    cmd_command = 'gcc ' + usr_src_fname + ' -o ' + rs_
+    cmd_command = 'gcc ' + usr_src_fname + ' -o ' + exercise_directory + rs_
     result = subprocess.Popen(cmd_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # compile the source program
     compile_error = result.communicate()[1]
     if compile_error == '':
-        cmd_command = rs_
+        cmd_command = exercise_directory + rs_
         result = subprocess.Popen(cmd_command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # run the program
         output = result.communicate(input=inputtext.value)[0]
         outputtext.value = output
@@ -70,7 +69,7 @@ def run_code_clicked_io(b, rs_="", text=widgets.Textarea(), outputtext=widgets.T
         outputtext.value = compile_error
 
 def add_compile_widgets_io(exercise_name):
-    src_fname = exercise_name + '_src.c'
+    src_fname = exercise_directory + exercise_name + '_src.c'
     with open(src_fname, 'r') as f:
         prewritten_src = f.read()
     text = widgets.Textarea(
