@@ -115,7 +115,7 @@ def convert_str2html(src_str):
     return src_str
 
 # Functions for short answer question widgets
-def s_check_clicked(b, answer_strs=[''], wd_str='', cd_str='', user_answer_text=widgets.Text(), after_description=widgets.HTML()):
+def s_check_clicked(b, answer_strs=[''], wd_str='', cd_str='', user_answer_text=widgets.Text(), after_description=widgets.HTML(), box=widgets.VBox()):
     answer_is_correct = False
     for i in answer_strs:
         if user_answer_text.value == i:
@@ -134,7 +134,7 @@ def s_check_clicked(b, answer_strs=[''], wd_str='', cd_str='', user_answer_text=
         after_description.value = "<font color='red'>" + convert_str2html(wd_str)
 
 
-def add_short_question(question_str, answer_strs, wrong_description='', correct_description=''):
+def add_short_question(question_str, answer_strs, wrong_description='', correct_description='', html_inserted=False):
     user_answer_text = widgets.Text(
         disabled=False,
     )
@@ -148,14 +148,18 @@ def add_short_question(question_str, answer_strs, wrong_description='', correct_
     )
     
     after_description = widgets.HTML('')
-    question_str = convert_str2html(question_str)
-    qa_box = widgets.VBox([widgets.HTML(question_str), user_answer_text, check_answer_btn, after_description])
+    if html_inserted == False:
+        question_str = convert_str2html(question_str)
+    qa_box = widgets.VBox(
+        [widgets.HTML(question_str), user_answer_text, check_answer_btn, after_description],
+        layout = widgets.Layout(border='solid 1px', padding='1rem')
+        )
     display(qa_box)
-    check_answer_btn.on_click(functools.partial(s_check_clicked, answer_strs=answer_strs, wd_str=wrong_description, cd_str=correct_description, user_answer_text=user_answer_text, after_description=after_description))
+    check_answer_btn.on_click(functools.partial(s_check_clicked, answer_strs=answer_strs, wd_str=wrong_description, cd_str=correct_description, user_answer_text=user_answer_text, after_description=after_description, box=qa_box))
 
     
 #Functions for choice question widgets
-def c_check_clicked(b, answer_idx=0, cd_str='', wd_str='', radio=widgets.RadioButtons(), after_description=widgets.HTML()):
+def c_check_clicked(b, answer_idx=0, cd_str='', wd_str='', radio=widgets.RadioButtons(), after_description=widgets.HTML(), box = widgets.VBox()):
     if radio.index == answer_idx:
         b.description='Correct'
         b.button_style='success'
@@ -165,7 +169,7 @@ def c_check_clicked(b, answer_idx=0, cd_str='', wd_str='', radio=widgets.RadioBu
         b.button_style='danger'
         after_description.value = "<font color='red'>" + convert_str2html(wd_str)
 
-def add_choice_question(question_str, choices, answer_idx, wrong_description='', correct_description=''):
+def add_choice_question(question_str, choices, answer_idx, wrong_description='', correct_description='', html_inserted=False):
     radio = widgets.RadioButtons(
         options = choices,
         disabled = False
@@ -179,7 +183,11 @@ def add_choice_question(question_str, choices, answer_idx, wrong_description='',
         layout=widgets.Layout(width='90px')
     )
     after_description = widgets.HTML('')
-    question_str = convert_str2html(question_str)
-    choice_box = widgets.VBox([widgets.HTML(question_str), radio, check_answer_btn, after_description])
+    if html_inserted == False:
+        question_str = convert_str2html(question_str)
+    choice_box = widgets.VBox(
+        [widgets.HTML(question_str), radio, check_answer_btn, after_description],
+        layout = widgets.Layout(border = 'solid 1px', padding='1rem')
+        )
     display(choice_box)
-    check_answer_btn.on_click(functools.partial(c_check_clicked, answer_idx=answer_idx, cd_str=correct_description, wd_str=wrong_description, radio=radio, after_description=after_description))
+    check_answer_btn.on_click(functools.partial(c_check_clicked, answer_idx=answer_idx, cd_str=correct_description, wd_str=wrong_description, radio=radio, after_description=after_description, box=choice_box))
