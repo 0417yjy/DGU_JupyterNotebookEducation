@@ -6,51 +6,66 @@ from IPython.display import display
 from IPython.display import clear_output
 cd = get_ipython().run_line_magic('pwd', '')
 exercise_directory = '.\\exercises\\'
-#change Label to html would work I think
+questions_num = 0
 
-# Functions for compile widgets (output only)
-def run_code_clicked_o(b, rs_="", text=widgets.Textarea(), outputtext=widgets.Textarea()): # button event handler
-    usr_src_fname = exercise_directory + rs_ + '.c'
-    with open(usr_src_fname, 'w') as f:
-        f.write(text.value)
-    cmd_command = 'gcc ' + usr_src_fname + ' -o ' + exercise_directory + rs_
-    result = subprocess.Popen(cmd_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # compile the source program
-    compile_error = result.communicate()[1]
-    if compile_error == '':
-        cmd_command = exercise_directory + rs_
-        result = subprocess.Popen(cmd_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # run the program
-        output = result.communicate()[0]
-        outputtext.value = output
-    else:
-        outputtext.value = compile_error
+class InteractiveWidgets:
+    idx = 0
+    box = widgets.VBox()
 
-def add_compile_widgets_o(exercise_name):
-    src_fname = exercise_directory + exercise_name + '_src.c'
-    with open(src_fname, 'r') as f:
-        prewritten_src = f.read()
-    text = widgets.Textarea(
-        value=prewritten_src,
-        placeholder='',
-        disabled=False,
-        layout=widgets.Layout(width='99%', height='200px'),
-    )
-    outputtext = widgets.Textarea(
-        value='',
-        placeholder='',
-        disabled=True,
-        layout=widgets.Layout(width='99%', height='100px'),
-    )
-    boxes = widgets.VBox([widgets.Label('Write your own code:'), text, widgets.Label('Output:'), outputtext])
+class CompileOutputOnly(InteractiveWidgets):
+    exercise_name = ""
+    text = widgets.Textarea()
+    outputtext = widgets.Textarea()
+    compile_run_btn = widgets.Button()
 
-    compile_run_btn = widgets.Button(
-        description='Run Code',
-        disabled=False,
-        button_style='warning', # 'success', 'info', 'warning', 'danger' or ''
-        tooltip='',
-        icon='check'
-    )
-    display(boxes, compile_run_btn)
-    compile_run_btn.on_click(functools.partial(run_code_clicked_o, rs_=exercise_name, text=text, outputtext=outputtext)) # bind event handler
+    # Functions for compile widgets (output only)
+    #def run_code_clicked_o(b, rs_="", text=widgets.Textarea(), outputtext=widgets.Textarea()): # button event handler
+    def run_code_clicked_o(self, b):
+        usr_src_fname = exercise_directory + self.exercise_name + '.c'
+        with open(usr_src_fname, 'w') as f:
+            f.write(self.text.value)
+        cmd_command = 'gcc ' + usr_src_fname + ' -o ' + exercise_directory + self.exercise_name
+        result = subprocess.Popen(cmd_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # compile the source program
+        compile_error = result.communicate()[1]
+        if compile_error == '':
+            cmd_command = exercise_directory + self.exercise_name
+            result = subprocess.Popen(cmd_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # run the program
+            output = result.communicate()[0]
+            self.outputtext.value = output
+        else:
+            self.outputtext.value = compile_error
+
+    def __init__(self, exercise_name):
+        super().__init__()
+        self.exercise_name = exercise_name
+        src_fname = exercise_directory + exercise_name + '_src.c'
+        with open(src_fname, 'r') as f:
+            prewritten_src = f.read()
+        self.text = widgets.Textarea(
+            value=prewritten_src,
+            placeholder='',
+            disabled=False,
+            layout=widgets.Layout(width='99%', height='200px'),
+        )
+        self.outputtext = widgets.Textarea(
+            value='',
+            placeholder='',
+            disabled=True,
+            layout=widgets.Layout(width='99%', height='100px'),
+        )
+        boxes = widgets.VBox([widgets.Label('Write your own code:'), self.text, widgets.Label('Output:'), self.outputtext])
+
+        self.compile_run_btn = widgets.Button(
+            description='Run Code',
+            disabled=False,
+            button_style='warning', # 'success', 'info', 'warning', 'danger' or ''
+            tooltip='',
+            icon='check'
+        )
+        display(boxes, self.compile_run_btn)
+        #compile_run_btn.on_click(functools.partial(self.run_code_clicked_o, rs_=exercise_name, text=text, outputtext=outputtext)) # bind event handler
+        self.compile_run_btn.on_click(self.run_code_clicked_o)
+
 
 # Functions for compile widgets (with input and output) (working)
 def run_code_clicked_io(b, rs_="", text=widgets.Textarea(), outputtext=widgets.Textarea(), inputtext=widgets.Textarea()): # button event handler
@@ -157,6 +172,7 @@ def add_short_question(question_str, answer_strs, wrong_description='', correct_
         )
     display(qa_box)
     check_answer_btn.on_click(functools.partial(s_check_clicked, answer_strs=answer_strs, wd_str=wrong_description, cd_str=correct_description, user_answer_text=user_answer_text, after_description=after_description, box=qa_box))
+    questions_num = questions_num + 1 # increment question's number
 
     
 #Functions for choice question widgets
@@ -192,3 +208,16 @@ def add_choice_question(question_str, choices, answer_idx, wrong_description='',
         )
     display(choice_box)
     check_answer_btn.on_click(functools.partial(c_check_clicked, answer_idx=answer_idx, cd_str=correct_description, wd_str=wrong_description, radio=radio, after_description=after_description, box=choice_box))
+    questions_num = questions_num + 1 # increment question's number
+
+def add_achieve_rate_widget():
+    checkbox_list = []
+    for i in range(questions_num):
+        c = widgets.Checkbox(
+            value=False,
+            description='',
+            disabled=True
+        )
+        display(c)
+        checkbox_list.append(c)
+        
