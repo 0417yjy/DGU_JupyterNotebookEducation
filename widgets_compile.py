@@ -1,25 +1,28 @@
 import ipywidgets as widgets
-import functools
 import subprocess
 from IPython import get_ipython
 from IPython.display import display
 from IPython.display import clear_output
+
+# Global path constants
 cd = get_ipython().run_line_magic('pwd', '')
 exercise_directory = '.\\exercises\\'
+
+# Global variables used in achievement rate
+question_list = []
 questions_num = 0
+achievement_rate = 0
+achieve_checkbox_list = []
+achieve_label = widgets.Label('100%')
 
-class InteractiveWidgets:
-    idx = 0
-    box = widgets.VBox()
-
-class CompileOutputOnly(InteractiveWidgets):
+class CompileOutputOnly():
     exercise_name = ""
     text = widgets.Textarea()
     outputtext = widgets.Textarea()
     compile_run_btn = widgets.Button()
-
+    box = widgets.VBox()
+    
     # Functions for compile widgets (output only)
-    #def run_code_clicked_o(b, rs_="", text=widgets.Textarea(), outputtext=widgets.Textarea()): # button event handler
     def run_code_clicked_o(self, b):
         usr_src_fname = exercise_directory + self.exercise_name + '.c'
         with open(usr_src_fname, 'w') as f:
@@ -36,7 +39,6 @@ class CompileOutputOnly(InteractiveWidgets):
             self.outputtext.value = compile_error
 
     def __init__(self, exercise_name):
-        super().__init__()
         self.exercise_name = exercise_name
         src_fname = exercise_directory + exercise_name + '_src.c'
         with open(src_fname, 'r') as f:
@@ -53,7 +55,76 @@ class CompileOutputOnly(InteractiveWidgets):
             disabled=True,
             layout=widgets.Layout(width='99%', height='100px'),
         )
-        boxes = widgets.VBox([widgets.Label('Write your own code:'), self.text, widgets.Label('Output:'), self.outputtext])
+        
+        self.compile_run_btn = widgets.Button(
+            description='Run Code',
+            disabled=False,
+            button_style='warning', # 'success', 'info', 'warning', 'danger' or ''
+            tooltip='',
+            icon='check'
+        )
+        self.box = widgets.VBox(
+            [widgets.Label('Write your own code:'), self.text, widgets.Label('Output:'), self.outputtext, self.compile_run_btn]
+            )
+        display(self.box)
+        self.compile_run_btn.on_click(self.run_code_clicked_o) # Bind button event handler
+
+
+# Functions for compile widgets (with input and output)
+class CompileInputOuput():
+    exercise_name = ""
+    text = widgets.Textarea()
+    outputtext = widgets.Textarea()
+    inputtext = widgets.Textarea()
+    compile_run_btn = widgets.Button()
+    box = widgets.VBox()
+    
+    def run_code_clicked_io(self, b): # button event handler
+        usr_src_fname = exercise_directory + self.exercise_name + '.c'
+        with open(usr_src_fname, 'w') as f:
+            f.write(self.text.value)
+        cmd_command = 'gcc ' + usr_src_fname + ' -o ' + exercise_directory + self.exercise_name
+        result = subprocess.Popen(cmd_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # compile the source program
+        compile_error = result.communicate()[1]
+        if compile_error == '':
+            cmd_command = exercise_directory + self.exercise_name
+            result = subprocess.Popen(cmd_command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # run the program
+            output = result.communicate(input=self.inputtext.value)[0]
+            self.outputtext.value = output
+        else: # compile error occured
+            cmd_command = self.inputtext.value
+            self.outputtext.value = compile_error
+
+    def __init__(self, exercise_name):
+        self.exercise_name = exercise_name
+        src_fname = exercise_directory + self.exercise_name + '_src.c'
+        with open(src_fname, 'r') as f:
+            prewritten_src = f.read()
+        self.text = widgets.Textarea(
+            value=prewritten_src,
+            placeholder='',
+            disabled=False,
+            layout=widgets.Layout(width='99%', height='200px'),
+        )
+
+        self.inputtext = widgets.Textarea(
+            value='',
+            placeholder='',
+            disabled=False,
+            layout=widgets.Layout(width='250px', height='100px'),
+        )
+        i_box = widgets.VBox([widgets.Label('Input:'), self.inputtext])
+
+        self.outputtext = widgets.Textarea(
+            value='',
+            placeholder='',
+            disabled=True,
+            layout=widgets.Layout(width='250px', height='100px'),
+        )
+        o_box = widgets.VBox([widgets.Label('Output: '), self.outputtext])
+        io_box = widgets.HBox(
+            [i_box, o_box],
+        )
 
         self.compile_run_btn = widgets.Button(
             description='Run Code',
@@ -62,162 +133,182 @@ class CompileOutputOnly(InteractiveWidgets):
             tooltip='',
             icon='check'
         )
-        display(boxes, self.compile_run_btn)
-        #compile_run_btn.on_click(functools.partial(self.run_code_clicked_o, rs_=exercise_name, text=text, outputtext=outputtext)) # bind event handler
-        self.compile_run_btn.on_click(self.run_code_clicked_o)
-
-
-# Functions for compile widgets (with input and output) (working)
-def run_code_clicked_io(b, rs_="", text=widgets.Textarea(), outputtext=widgets.Textarea(), inputtext=widgets.Textarea()): # button event handler
-    usr_src_fname = exercise_directory + rs_ + '.c'
-    with open(usr_src_fname, 'w') as f:
-        f.write(text.value)
-    cmd_command = 'gcc ' + usr_src_fname + ' -o ' + exercise_directory + rs_
-    result = subprocess.Popen(cmd_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # compile the source program
-    compile_error = result.communicate()[1]
-    if compile_error == '':
-        cmd_command = exercise_directory + rs_
-        result = subprocess.Popen(cmd_command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # run the program
-        output = result.communicate(input=inputtext.value)[0]
-        outputtext.value = output
-    else: # compile error occured
-        cmd_command = inputtext.value
-        outputtext.value = compile_error
-
-def add_compile_widgets_io(exercise_name):
-    src_fname = exercise_directory + exercise_name + '_src.c'
-    with open(src_fname, 'r') as f:
-        prewritten_src = f.read()
-    text = widgets.Textarea(
-        value=prewritten_src,
-        placeholder='',
-        disabled=False,
-        layout=widgets.Layout(width='99%', height='200px'),
-    )
-
-    inputtext = widgets.Textarea(
-        value='',
-        placeholder='',
-        disabled=False,
-        layout=widgets.Layout(width='250px', height='100px'),
-    )
-    i_box = widgets.VBox([widgets.Label('Input:'), inputtext])
-
-    outputtext = widgets.Textarea(
-        value='',
-        placeholder='',
-        disabled=True,
-        layout=widgets.Layout(width='250px', height='100px'),
-    )
-    o_box = widgets.VBox([widgets.Label('Output: '), outputtext])
-    io_box = widgets.HBox(
-        [i_box, o_box],
-        #layout=widgets.Layout(max_width='100%', height='150px'),
-    )
-    boxes = widgets.VBox([widgets.Label('Write your own code:'), text, io_box])
-
-    compile_run_btn = widgets.Button(
-        description='Run Code',
-        disabled=False,
-        button_style='warning', # 'success', 'info', 'warning', 'danger' or ''
-        tooltip='',
-        icon='check'
-    )
-    display(boxes, compile_run_btn)
-    compile_run_btn.on_click(functools.partial(run_code_clicked_io, rs_=exercise_name, text=text, outputtext=outputtext, inputtext=inputtext)) # bind event handler
+        self.box = widgets.VBox([widgets.Label('Write your own code:'), self.text, io_box, self.compile_run_btn])
+        display(self.box)
+        self.compile_run_btn.on_click(self.run_code_clicked_io) # bind event handler
 
 def convert_str2html(src_str):
     src_str = src_str.replace("\n", '<br>')
     return src_str
 
-# Functions for short answer question widgets
-def s_check_clicked(b, answer_strs=[''], wd_str='', cd_str='', user_answer_text=widgets.Text(), after_description=widgets.HTML(), box=widgets.VBox()):
-    answer_is_correct = False
-    for i in answer_strs:
-        if user_answer_text.value == i:
-            answer_is_correct = True 
-            break
+# Superclass for question widgets
+class QuestionWidgets:
+    idx = 0
+    box = widgets.VBox()
 
-    if answer_is_correct == True:
-        b.description='Correct'
-        b.button_style='success'
-        #after_description.layout = widgets.Layout(border='solid 1px')
-        after_description.value = "<font color='green'>" + convert_str2html(cd_str)
-    else:
-        b.description='Incorrect'
-        b.button_style='danger'
-        #after_description.layout = widgets.Layout(border='solid 1px')
-        after_description.value = "<font color='red'>" + convert_str2html(wd_str)
+    def __init__(self):
+        global questions_num
+        self.idx = questions_num
+        questions_num = questions_num + 1
 
+    def update_rate(self):
+        global achieve_label
+        global question_list
+        achieved_num = 0
 
-def add_short_question(question_str, answer_strs, wrong_description='', correct_description='', html_inserted=False):
-    user_answer_text = widgets.Text(
-        disabled=False,
-    )
-    check_answer_btn = widgets.Button(
-        description='Check',
-        disabled=False,
-        button_style='warning',
-        tooltip='',
-        icon='check',
-        layout=widgets.Layout(width='90px')
-    )
-    
-    after_description = widgets.HTML('')
-    if html_inserted == False:
-        question_str = convert_str2html(question_str)
-    qa_box = widgets.VBox(
-        [widgets.HTML(question_str), user_answer_text, check_answer_btn, after_description],
-        layout = widgets.Layout(border='solid 1px', padding='1rem')
-        )
-    display(qa_box)
-    check_answer_btn.on_click(functools.partial(s_check_clicked, answer_strs=answer_strs, wd_str=wrong_description, cd_str=correct_description, user_answer_text=user_answer_text, after_description=after_description, box=qa_box))
-    questions_num = questions_num + 1 # increment question's number
-
-    
-#Functions for choice question widgets
-def c_check_clicked(b, answer_idx=0, cd_str='', wd_str='', radio=widgets.RadioButtons(), after_description=widgets.HTML(), box = widgets.VBox()):
-    if radio.index == answer_idx:
-        b.description='Correct'
-        b.button_style='success'
-        after_description.value = "<font color='green'>" + convert_str2html(cd_str)
-    else:
-        b.description='Incorrect'
-        b.button_style='danger'
-        after_description.value = "<font color='red'>" + convert_str2html(wd_str)
-
-def add_choice_question(question_str, choices, answer_idx, wrong_description='', correct_description='', html_inserted=False):
-    radio = widgets.RadioButtons(
-        options = choices,
-        disabled = False
-    )
-    check_answer_btn = widgets.Button(
-        description='Check',
-        disabled=False,
-        button_style='warning',
-        tooltip='',
-        icon='check',
-        layout=widgets.Layout(width='90px')
-    )
-    after_description = widgets.HTML('')
-    if html_inserted == False:
-        question_str = convert_str2html(question_str)
-    choice_box = widgets.VBox(
-        [widgets.HTML(question_str), radio, check_answer_btn, after_description],
-        layout = widgets.Layout(border = 'solid 1px', padding='1rem')
-        )
-    display(choice_box)
-    check_answer_btn.on_click(functools.partial(c_check_clicked, answer_idx=answer_idx, cd_str=correct_description, wd_str=wrong_description, radio=radio, after_description=after_description, box=choice_box))
-    questions_num = questions_num + 1 # increment question's number
-
-def add_achieve_rate_widget():
-    checkbox_list = []
-    for i in range(questions_num):
-        c = widgets.Checkbox(
-            value=False,
-            description='',
-            disabled=True
-        )
-        display(c)
-        checkbox_list.append(c)
+        # Count correct answers
+        for i in question_list:
+            if i.is_achieved == True:
+                achieved_num += 1
         
+        # Calculate achievement rate
+        achievement_rate = int(achieved_num / questions_num * 100)
+        # Update achievement rate label
+        achieve_label.value = str(achievement_rate) + '%'
+        # Update achievement checkbox of its index
+        achieve_checkbox_list[self.idx].value = True
+
+# Class for short answer question widget
+class ShortAnswerQuestion(QuestionWidgets):
+    question_str=""
+    answer_strs=['']
+    wrong_description=""
+    correct_description=""
+    user_answer_text=widgets.Text()
+    after_description=widgets.HTML()
+    check_answer_btn=widgets.Button()
+    box=widgets.VBox()
+    is_achieved = False
+
+    def s_check_clicked(self, b):
+        answer_is_correct = False
+        for i in self.answer_strs: # Check if the answer is correct
+            if self.user_answer_text.value == i:
+                answer_is_correct = True 
+                break
+
+        if answer_is_correct == True:
+            self.is_achieved = True # Mark this question is completed
+            self.update_rate()
+
+            b.description='Correct'
+            b.button_style='success'
+            self.after_description.value = "<font color='green'>" + convert_str2html(self.correct_description)
+        else:
+            b.description='Incorrect'
+            b.button_style='danger'
+            self.after_description.value = "<font color='red'>" + convert_str2html(self.wrong_description)
+
+
+    def __init__(self, question_str, answer_strs, wrong_description='', correct_description='', html_inserted=False):
+        super().__init__()
+        self.question_str = question_str
+        self.answer_strs = answer_strs
+        self.wrong_description = wrong_description
+        self.correct_description = correct_description
+
+        self.user_answer_text = widgets.Text(
+            disabled=False,
+        )
+        self.check_answer_btn = widgets.Button(
+            description='Check',
+            disabled=False,
+            button_style='warning',
+            tooltip='',
+            icon='check',
+            layout=widgets.Layout(width='90px')
+        )
+        
+        self.after_description = widgets.HTML('')
+
+        if html_inserted == False: # If the question isn't in HTML format, convert it to HTML
+            self.question_str = convert_str2html(self.question_str)
+
+        self.box = widgets.VBox( # pack components into a VBox
+            [widgets.HTML(question_str), self.user_answer_text, self.check_answer_btn, self.after_description],
+            layout = widgets.Layout(border='solid 1px', padding='1rem')
+            )
+        display(self.box)
+        self.check_answer_btn.on_click(self.s_check_clicked)
+        global question_list # Add this object into widget list
+        question_list.append(self)
+
+    
+# Class for choie question widget
+class ChoiceQuestion(QuestionWidgets):
+    question_str = ""
+    choices = ['']
+    answer_idx = 0
+    wrong_description = ''
+    correct_description = ''
+    after_description=widgets.HTML()
+    radio = widgets.RadioButtons()
+    check_answer_btn = widgets.Button()
+    is_achieved = False
+    
+    def c_check_clicked(self, b):
+        if self.radio.index == self.answer_idx:
+            self.is_achieved = True # Mark this question is completed
+            self.update_rate()
+
+            b.description='Correct'
+            b.button_style='success'
+            self.after_description.value = "<font color='green'>" + convert_str2html(self.correct_description)
+        else:
+            b.description='Incorrect'
+            b.button_style='danger'
+            self.after_description.value = "<font color='red'>" + convert_str2html(self.wrong_description)
+
+    def __init__(self, question_str, choices, answer_idx, wrong_description='', correct_description='', html_inserted=False):
+        super().__init__()
+        self.question_str = question_str
+        self.choices = choices
+        self.answer_idx = answer_idx
+        self.wrong_description = wrong_description
+        self.correct_description = correct_description
+
+        self.radio = widgets.RadioButtons(
+            options = choices,
+            disabled = False
+        )
+        self.check_answer_btn = widgets.Button(
+            description='Check',
+            disabled=False,
+            button_style='warning',
+            tooltip='',
+            icon='check',
+            layout=widgets.Layout(width='90px')
+        )
+        self.after_description = widgets.HTML('')
+        if html_inserted == False:
+            self.question_str = convert_str2html(question_str)
+        self.box = widgets.VBox(
+            [widgets.HTML(question_str), self.radio, self.check_answer_btn, self.after_description],
+            layout = widgets.Layout(border = 'solid 1px', padding='1rem')
+            )
+        display(self.box)
+        self.check_answer_btn.on_click(self.c_check_clicked)
+        global question_list # Add this object into widget list
+        question_list.append(self)
+
+class AchieveRate:
+    box = widgets.VBox()
+
+    def __init__(self):
+        # Using global variables
+        global question_list
+        global achieve_checkbox_list
+        global achieve_label
+
+        checks_box = widgets.HBox()
+        for i in range(len(question_list)):
+            c = widgets.Checkbox(
+                value=False,
+                description='',
+                disabled=True
+            )
+            achieve_checkbox_list.append(c)
+            checks_box.children += (c,)
+        
+        self.box = widgets.HBox([checks_box, achieve_label])
+        display(self.box)
