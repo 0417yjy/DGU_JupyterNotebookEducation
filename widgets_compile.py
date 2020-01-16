@@ -6,6 +6,7 @@ from IPython.display import display
 from IPython.display import clear_output
 cd = get_ipython().run_line_magic('pwd', '')
 exercise_directory = '.\\exercises\\'
+#change Label to html would work I think
 
 # Functions for compile widgets (output only) (adding exercise direcotires)
 def run_code_clicked_o(b, rs_="", text=widgets.Textarea(), outputtext=widgets.Textarea()): # button event handler
