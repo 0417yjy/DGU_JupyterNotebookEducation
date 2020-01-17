@@ -3,6 +3,7 @@ import subprocess
 from IPython import get_ipython
 from IPython.display import display
 from IPython.display import clear_output
+from IPython.core.display import HTML
 
 # Global path constants
 cd = get_ipython().run_line_magic('pwd', '')
@@ -13,7 +14,7 @@ question_list = []
 questions_num = 0
 achievement_rate = 0
 achieve_checkbox_list = []
-achieve_label = widgets.Label('100%')
+achieve_label = widgets.Label('Participation: 0%')
 
 class CompileOutputOnly():
     exercise_name = ""
@@ -64,7 +65,8 @@ class CompileOutputOnly():
             icon='check'
         )
         self.box = widgets.VBox(
-            [widgets.Label('Write your own code:'), self.text, widgets.Label('Output:'), self.outputtext, self.compile_run_btn]
+            [widgets.Label('Write your own code:'), self.text, widgets.Label('Output:'), self.outputtext, self.compile_run_btn],
+            layout = widgets.Layout(border='solid 2px', padding='1rem')
             )
         display(self.box)
         self.compile_run_btn.on_click(self.run_code_clicked_o) # Bind button event handler
@@ -106,6 +108,7 @@ class CompileInputOuput():
             disabled=False,
             layout=widgets.Layout(width='99%', height='200px'),
         )
+        source_box = widgets.VBox([widgets.Label('Write your own code:'), self.text], layout = widgets.Layout(width='100%'))
 
         self.inputtext = widgets.Textarea(
             value='',
@@ -133,8 +136,12 @@ class CompileInputOuput():
             tooltip='',
             icon='check'
         )
-        self.box = widgets.VBox([widgets.Label('Write your own code:'), self.text, io_box, self.compile_run_btn])
+        self.box = widgets.VBox(
+            [widgets.Label('Write your own code:'), self.text, io_box, self.compile_run_btn],
+            layout = widgets.Layout(border='solid 2px', padding='1rem')
+            )
         display(self.box)
+        
         self.compile_run_btn.on_click(self.run_code_clicked_io) # bind event handler
 
 def convert_str2html(src_str):
@@ -164,7 +171,7 @@ class QuestionWidgets:
         # Calculate achievement rate
         achievement_rate = int(achieved_num / questions_num * 100)
         # Update achievement rate label
-        achieve_label.value = str(achievement_rate) + '%'
+        achieve_label.value = 'Participation: ' + str(achievement_rate) + '%'
         # Update achievement checkbox of its index
         achieve_checkbox_list[self.idx].value = True
 
@@ -225,8 +232,8 @@ class ShortAnswerQuestion(QuestionWidgets):
             self.question_str = convert_str2html(self.question_str)
 
         self.box = widgets.VBox( # pack components into a VBox
-            [widgets.HTML(question_str), self.user_answer_text, self.check_answer_btn, self.after_description],
-            layout = widgets.Layout(border='solid 1px', padding='1rem')
+            [widgets.HTML(self.question_str), self.user_answer_text, self.check_answer_btn, self.after_description],
+            layout = widgets.Layout(border='solid 2px', padding='1rem')
             )
         display(self.box)
         self.check_answer_btn.on_click(self.s_check_clicked)
@@ -283,8 +290,8 @@ class ChoiceQuestion(QuestionWidgets):
         if html_inserted == False:
             self.question_str = convert_str2html(question_str)
         self.box = widgets.VBox(
-            [widgets.HTML(question_str), self.radio, self.check_answer_btn, self.after_description],
-            layout = widgets.Layout(border = 'solid 1px', padding='1rem')
+            [widgets.HTML(self.question_str), self.radio, self.check_answer_btn, self.after_description],
+            layout = widgets.Layout(border = 'solid 2px', padding='1rem')
             )
         display(self.box)
         self.check_answer_btn.on_click(self.c_check_clicked)
@@ -300,7 +307,7 @@ class AchieveRate:
         global achieve_checkbox_list
         global achieve_label
 
-        checks_box = widgets.HBox()
+        checks_box = widgets.HBox(layout = widgets.Layout(border='solid 1px'))
         for i in range(len(question_list)):
             c = widgets.Checkbox(
                 value=False,
@@ -310,5 +317,51 @@ class AchieveRate:
             achieve_checkbox_list.append(c)
             checks_box.children += (c,)
         
-        self.box = widgets.HBox([checks_box, achieve_label])
+        self.box = widgets.VBox(
+            [checks_box, achieve_label],
+            layout = widgets.Layout(border='ridge 2px', padding='1rem')
+            )
         display(self.box)
+
+def add_link_buttons(mod=0, prevlink='', nextlink=''):
+    html_str = """
+<style>
+.button {
+  background-color: orange;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+.grid-container {
+  display: grid;
+  grid-template-columns: 100px auto 100px;
+  grid-template-rows: auto;
+}
+</style>
+
+<div class="grid-container">"""
+    if mod == 0: # Previous and next links are inserted (default)
+        html_str += "\n<div class=\"grid-item\"><a href=\"" + prevlink + """\" class="button">Previous</a></div>
+<div class="grid-item"></div>
+<div class="grid-item"><a href=\"""" + nextlink + """\" class=\"button\">Next</a></div>
+</div>
+"""
+        display(HTML(html_str))
+    elif mod == 1: # Only Previous link is inserted
+        html_str += "\n<div class=\"grid-item\"><a href=\"" + prevlink + """\" class="button">Previous</a></div>
+<div class="grid-item"></div>
+<div class="grid-item"></div>
+</div>
+"""
+        display(HTML(html_str))
+    elif mod == 2: # Only next link is inserted
+        html_str += "<div class=\"grid-item\"></div><div class=\"grid-item\"></div><div class=\"grid-item\"><a href=\"" + nextlink + """\" class=\"button\">Next</a></div>
+</div>
+"""
+        display(HTML(html_str))  
