@@ -1,8 +1,9 @@
 #include <stdio.h>
 
 int main(void) {
- int a;
- scanf("%d", &a);
- printf("%d\n", a);
- return 0;
+    puts("Name: John");
+    puts("University: Dongguk University");
+    puts("Major: CSE");
+    puts("Sid: 2020112001");
+    return 0;
 }
